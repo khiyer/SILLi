@@ -20,4 +20,11 @@ Where <I>c<sub>peff</sub></I> is the effective rock heat capacity that includes 
 The model is accompanied by three case studies of sills emplaced in two different sedimentary basins, the [Karoo Basin](/tutorials/karoo.md) in South Africa and the [Vøring Basin](/tutorials/utgard.md) offshore Norway.
 
 ### Further Reading
-A full description of the model with examples can be found [here](https://www.geosci-model-dev-discuss.net/gmd-2017-132/).
+The algorithms and examples used in SILLi 1.0 are documented in the Geoscientific Model Development article: <em>"Iyer, K., Svensen, H., and Schmid, D. W.: SILLi 1.0: A 1D Numerical Tool Quantifying the Thermal Effects of Sill Intrusions, Geosci. Model Dev. Discuss., [https://doi.org/10.5194/gmd-2017-132](https://www.geosci-model-dev-discuss.net/gmd-2017-132/), in review, 2017.</em>
+
+### Authors
+Karthik Iyer
+
+Henrik Svensen
+
+Daniel W. Schmid
