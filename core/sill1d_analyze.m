@@ -1,4 +1,4 @@
-function sill1d_gui_handle = sill1d_analyze(rock, sill, welldata, result, release)
+function sill1d_gui_handle = sill1d_analyze(rock, sill, welldata, result, release, codeloc)
 % sill1d_analyze
 %
 % Postprocessing of sill model results.
@@ -7,6 +7,7 @@ function sill1d_gui_handle = sill1d_analyze(rock, sill, welldata, result, releas
 %
 
 %--------------------------------------------------------------------------
+
 yr              = 365*24*60*60;
 
 %% Initialize Figure
@@ -160,7 +161,7 @@ h_t2_hb2	= uix.HBox('Parent', h_tp_result);
 h_tp_result.Heights = [20, -1];
 
 %% -- Play buttons
-PlayButtons = load('ext\PlayButtons.mat');
+PlayButtons = load(fullfile(codeloc, 'ext', 'PlayButtons.mat'));
 
 %   START button
 obj.sill1d_play_go_start = ...
@@ -474,15 +475,36 @@ grid(  h_ax(1), 'on');
         end
         
         %% - Temperature
-        h_p = plot(result.Temp(Active_nodes, tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [1 0 0], 'Parent', ax.res(1)); % red
-        add_menu(h_p);
-        ylim(  ax.res(1), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(1), 'manual');
-        ylabel(ax.res(1), 'TVDSS [km]');
-        xlabel(ax.res(1), sprintf('Temperature [%cC]', char(176)));
-        grid(  ax.res(1), 'on');
-        set(   ax.res(1), 'xaxisLocation', 'top')
+        p_p1    = getappdata(sill1d_gui_handle, 'p_p1');
+        if isempty(p_p1) || ~ishandle(p_p1)
+            p_p1 = plot(result.Temp(Active_nodes, tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [1 0 0], 'Parent', ax.res(1)); % red
+            add_menu(p_p1);
+            ylabel(ax.res(1), 'TVDSS [km]');
+            xlabel(ax.res(1), sprintf('Temperature [%cC]', char(176)));
+            grid(  ax.res(1), 'on');
+            set(   ax.res(1), 'xaxisLocation', 'top')
+            setappdata(sill1d_gui_handle, 'p_p1', p_p1);
+        else
+            set(p_p1, 'xdata', result.Temp(Active_nodes, tstep), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
+        
+        % Sets limits to remove plotting effects of minor inaacuracies when constant T is used
+        xlim(  ax.res(1), [min(p_p1.XData)-1 max(p_p1.XData)+1]);
+        if abs(max(p_p1.XData)-min(p_p1.XData))<2
+            xlim(ax.res(1), [min(p_p1.XData)-2 max(p_p1.XData)+2]);
+        else
+            xlim(  ax.res(1), [min(p_p1.XData)-1 max(p_p1.XData)+1]);
+            if min(p_p1.XData)>=-1e-2
+                xlims = xlim(ax.res(1));
+                xlims(1) = 0;
+                xlim(ax.res(1), xlims);
+            end
+        end
+        ylim(  ax.res(1), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);       
+        
+        % Plots Sills if present
         hold(ax.res(1), 'on')
+        delete(findobj(ax.res(1), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(1).XLim(1) ax.res(1).XLim(2) ax.res(1).XLim(2) ax.res(1).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
@@ -491,40 +513,65 @@ grid(  h_ax(1), 'on');
         hold(ax.res(1), 'off')
         
         %% - Vitrinite
-        h_p = plot(result.Ro(Active_nodes, tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [127/255 0 255/255], 'Parent', ax.res(2)); % purple
-        add_menu(h_p);
+        p_p2    = getappdata(sill1d_gui_handle, 'p_p2');
+        if isempty(p_p2) || ~ishandle(p_p2)
+            p_p2 = plot(result.Ro(Active_nodes, tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [127/255 0 255/255], 'Parent', ax.res(2)); % purple
+            add_menu(p_p2);
+            ylabel(ax.res(2), 'TVDSS [km]')
+            xlabel(ax.res(2), 'Vitrinite Reflectance [%Ro]');
+            set(   ax.res(2), 'xaxisLocation', 'top')
+            grid(  ax.res(2), 'on')
+            setappdata(sill1d_gui_handle, 'p_p2', p_p2);
+        else
+            set(p_p2, 'xdata', result.Ro(Active_nodes, tstep), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
         ylim(  ax.res(2), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(2), 'manual');
-        ylabel(ax.res(2), 'TVDSS [km]')
-        xlabel(ax.res(2), 'Vitrinite Reflectance [%Ro]');
-        set(   ax.res(2), 'xaxisLocation', 'top')
-        grid(  ax.res(2), 'on')
+        xlim(  ax.res(2), 'auto');
+               
+        % Plots VR data if available for last step
+        delete(findobj(ax.res(2), 'Color', 'k')); % Removes plotted VR data
+        delete(findobj(ax.res(2), 'Color', 'b')); % Removes plotted VR data
         if tstep == size(result.Temp, 2) && ~isempty(welldata.VR)
             hold(ax.res(2), 'on');
             if size(welldata.VR,2)<3
-                h_p = plot(welldata.VR(:,2), -welldata.VR(:,1)./1e3, 'o', 'Color', [0 0 0], 'Parent', ax.res(2));
+               plot(welldata.VR(:,2), -welldata.VR(:,1)./1e3, 'o', 'Color', [0 0 0], 'Parent', ax.res(2));
             else
-                h_p = errorbarxy(ax.res(2), welldata.VR(:,2), -welldata.VR(:,1)./1e3, welldata.VR(:,3),0.*welldata.VR(:,3),{'ko', 'b', 'b'});
+               errorbarxy(ax.res(2), welldata.VR(:,2), -welldata.VR(:,1)./1e3, welldata.VR(:,3),0.*welldata.VR(:,3),{'ko', 'b', 'b'});
             end
             hold(ax.res(2), 'off');
+            xlim(ax.res(2), [min(welldata.VR(:,2)) max(welldata.VR(:,2))]);
         end
+         
+        % Plots Sills if present
         hold(ax.res(2), 'on')
+        delete(findobj(ax.res(2), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(2).XLim(1) ax.res(2).XLim(2) ax.res(2).XLim(2) ax.res(2).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
             patch(X, -Y, [224/255 224/255 224/255], 'FaceAlpha',.5, 'EdgeColor', 'none', 'Parent', ax.res(2));
+            xlim(ax.res(2), X(1:2));
         end
         hold(ax.res(2), 'off')
         
         %% - TOC
-        h_p = plot(plots.Toc(Active_nodes,tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [0 153/255 0], 'Parent', ax.res(3)); % Green
-        add_menu(h_p);
+        p_p3    = getappdata(sill1d_gui_handle, 'p_p3');
+        if isempty(p_p3) || ~ishandle(p_p3)
+            p_p3 = plot(plots.Toc(Active_nodes,tstep), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [0 153/255 0], 'Parent', ax.res(3)); % Green
+            add_menu(p_p3);
+            ylabel(ax.res(3), 'TVDSS [km]');
+            xlabel(ax.res(3), 'TOC Content [wt%]');
+            set(   ax.res(3), 'xaxisLocation', 'top')
+            grid(  ax.res(3), 'on');
+            setappdata(sill1d_gui_handle, 'p_p3', p_p3);
+        else
+            set(p_p3, 'xdata', plots.Toc(Active_nodes,tstep), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
         ylim(  ax.res(3), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(3), 'manual');
-        ylabel(ax.res(3), 'TVDSS [km]');
-        xlabel(ax.res(3), 'TOC Content [wt%]');
-        set(   ax.res(3), 'xaxisLocation', 'top')
-        grid(  ax.res(3), 'on');
+        xlim(  ax.res(3), 'auto');
+
+        % Plots TOC data if available for last step
+        delete(findobj(ax.res(3), 'Color', 'k')); % Removes plotted TOC data
+        delete(findobj(ax.res(3), 'Color', 'b')); % Removes plotted TOC data
         if tstep == size(result.Temp, 2) && ~isempty(welldata.Toc)
             hold(ax.res(3), 'on');
             if size(welldata.Toc,2)<3
@@ -533,27 +580,46 @@ grid(  h_ax(1), 'on');
                 h_p = errorbarxy(ax.res(2), welldata.Toc(:,2), -welldata.Toc(:,1)./1e3, welldata.Toc(:,3),0.*welldata.Toc(:,3),{'ko', 'b', 'b'});
             end
             hold(ax.res(3), 'off');
+            xlim(ax.res(3), [min(welldata.Toc(:,2)) max(welldata.Toc(:,2))]);
         end
+        
+        % Plots Sills if present
         hold(ax.res(3), 'on')
+        delete(findobj(ax.res(3), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(3).XLim(1) ax.res(3).XLim(2) ax.res(3).XLim(2) ax.res(3).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
             patch(X, -Y, [224/255 224/255 224/255], 'FaceAlpha', .5, 'EdgeColor', 'none', 'Parent', ax.res(3));
         end
         hold(ax.res(3), 'off')
-        
+               
         %% T-Max
+        p_p4    = getappdata(sill1d_gui_handle, 'p_p4');
         T_max               = result.Tmax(:,tstep);
         T_max(result.Ind<0) = NaN;
-        h_p = plot(T_max(Active_nodes), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [255/255 128/255 0], 'MarkerFaceColor', 'k', 'Parent', ax.res(4)); % Orange
-        add_menu(h_p);
+        if isempty(p_p4) || ~ishandle(p_p4)
+            p_p4 = plot(T_max(Active_nodes), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [255/255 128/255 0], 'MarkerFaceColor', 'k', 'Parent', ax.res(4)); % Orange
+            add_menu(p_p4);
+            ylabel(ax.res(4), 'TVDSS [km]');
+            xlabel(ax.res(4), sprintf('T_m_a_x [%cC]', char(176)));
+            set(   ax.res(4), 'xaxisLocation', 'top')
+            grid(  ax.res(4), 'on');
+            setappdata(sill1d_gui_handle, 'p_p4', p_p4);
+        else
+            set(p_p4, 'xdata', T_max(Active_nodes), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
+        
+        % Sets limits to remove plotting effects of minor inaacuracies when constant T is used
+        if abs(max(p_p4.XData)-min(p_p4.XData))<2
+            xlim(ax.res(4), [min(p_p4.XData)-2 max(p_p4.XData)+2]);
+        else
+            xlim(ax.res(4), 'auto');
+        end
         ylim(  ax.res(4), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(4), 'manual');
-        ylabel(ax.res(4), 'TVDSS [km]');
-        xlabel(ax.res(4), sprintf('T_m_a_x [%cC]', char(176)));
-        set(   ax.res(4), 'xaxisLocation', 'top')
-        grid(  ax.res(4), 'on');
+        
+        % Plots Sills if present
         hold(ax.res(4), 'on')
+        delete(findobj(ax.res(4), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(4).XLim(1) ax.res(4).XLim(2) ax.res(4).XLim(2) ax.res(4).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
@@ -562,15 +628,23 @@ grid(  h_ax(1), 'on');
         hold(ax.res(4), 'off')
         
         %% Pressure
-        h_p = plot(result.Pres(Active_nodes,tstep)./1e6, -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [0 24/255 204/255], 'Parent', ax.res(5)); % Blue
-        add_menu(h_p);
+        p_p5    = getappdata(sill1d_gui_handle, 'p_p5');
+        if isempty(p_p5) || ~ishandle(p_p5)
+            p_p5 = plot(result.Pres(Active_nodes,tstep)./1e6, -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [0 24/255 204/255], 'Parent', ax.res(5)); % Blue
+            add_menu(p_p5);
+            ylabel(ax.res(5), 'TVDSS [km]')
+            xlabel(ax.res(5), 'Pressure [MPa]');
+            set(   ax.res(5), 'xaxisLocation', 'top')
+            grid(  ax.res(5), 'on')
+            setappdata(sill1d_gui_handle, 'p_p5', p_p5);
+        else
+            set(p_p5, 'xdata', result.Pres(Active_nodes,tstep)./1e6, 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
         ylim(  ax.res(5), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)])
-        axis(  ax.res(5), 'manual');
-        ylabel(ax.res(5), 'TVDSS [km]')
-        xlabel(ax.res(5), 'Pressure [MPa]');
-        set(   ax.res(5), 'xaxisLocation', 'top')
-        grid(  ax.res(5), 'on')
+
+        % Plots Sills if present
         hold(ax.res(5), 'on')
+        delete(findobj(ax.res(5), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(5).XLim(1) ax.res(5).XLim(2) ax.res(5).XLim(2) ax.res(5).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
@@ -579,15 +653,23 @@ grid(  h_ax(1), 'on');
         hold(ax.res(5), 'off')
         
         %% - CO2 Inorganic
-        h_p = plot(plots.CO2_release(Active_nodes,tstep), -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [253/255 153/255 204/255], 'Parent', ax.res(6)); % Pink
-        add_menu(h_p);
+        p_p6    = getappdata(sill1d_gui_handle, 'p_p6');
+        if isempty(p_p6) || ~ishandle(p_p6)
+            p_p6 = plot(plots.CO2_release(Active_nodes,tstep), -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [253/255 153/255 204/255], 'Parent', ax.res(6)); % Pink
+            add_menu(p_p6);
+            ylabel(ax.res(6), 'TVDSS [km]');
+            xlabel(ax.res(6), 'CO_2 inorganic [kg/m^3]');
+            set(   ax.res(6), 'xaxisLocation', 'top')
+            grid(  ax.res(6), 'on');
+            setappdata(sill1d_gui_handle, 'p_p6', p_p6);
+        else
+            set(p_p6, 'xdata', plots.CO2_release(Active_nodes,tstep), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
         ylim(  ax.res(6), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(6), 'manual');
-        ylabel(ax.res(6), 'TVDSS [km]');
-        xlabel(ax.res(6), 'CO_2 inorganic [kg/m^3]');
-        set(   ax.res(6), 'xaxisLocation', 'top')
-        grid(  ax.res(6), 'on');
+
+        % Plots Sills if present
         hold(ax.res(6), 'on')
+        delete(findobj(ax.res(6), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(6).XLim(1) ax.res(6).XLim(2) ax.res(6).XLim(2) ax.res(6).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];
@@ -596,15 +678,23 @@ grid(  h_ax(1), 'on');
         hold(ax.res(6), 'off')
         
         %% - CO2 Organic
-        h_p = plot(plots.CO2_org(Active_nodes,tstep), -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [0 0 0], 'Parent', ax.res(7)); % Pink
-        add_menu(h_p);
+        p_p7    = getappdata(sill1d_gui_handle, 'p_p7');
+        if isempty(p_p7) || ~ishandle(p_p7)
+            p_p7 = plot(plots.CO2_org(Active_nodes,tstep), -result.Gcoord(Active_nodes,tstep)./1e3, '.-', 'Color', [0 0 0], 'Parent', ax.res(7)); % Pink
+            add_menu(p_p7);
+            ylabel(ax.res(7), 'TVDSS [km]');
+            xlabel(ax.res(7), 'CO_2 Organic [kg/m^3]');
+            set(   ax.res(7), 'xaxisLocation', 'top')
+            grid(  ax.res(7), 'on');
+            setappdata(sill1d_gui_handle, 'p_p7', p_p7);
+        else
+            set(p_p7, 'xdata', plots.CO2_org(Active_nodes,tstep), 'ydata', -result.Gcoord(Active_nodes, tstep)./1e3);
+        end
         ylim(  ax.res(7), [min(-result.Gcoord(Active_nodes, tstep)./1e3) max(-result.Gcoord(Active_nodes, tstep)./1e3)]);
-        axis(  ax.res(7), 'manual');
-        ylabel(ax.res(7), 'TVDSS [km]');
-        xlabel(ax.res(7), 'CO_2 Organic [kg/m^3]');
-        set(   ax.res(7), 'xaxisLocation', 'top')
-        grid(  ax.res(7), 'on');
+
+        % Plots Sills if present
         hold(ax.res(7), 'on')
+        delete(findobj(ax.res(7), 'Type', 'Patch')); %Sills are plotted everytime and have to be manually removed
         for k = 1:length(Ix)
             X = [ax.res(7).XLim(1) ax.res(7).XLim(2) ax.res(7).XLim(2) ax.res(7).XLim(1)];
             Y = [max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 max(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3 min(result.Gcoord(result.Ind==Ix(k), tstep))/1e3];

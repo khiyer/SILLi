@@ -1,4 +1,4 @@
-function [Results, Time] = sill1d_compute(ROCK, SILL, FLUID, WellData, Res)
+function [Results, Time] = sill1d_compute(ROCK, SILL, FLUID, WellData, Res, codeloc)
 % sill1d_comput
 %
 % 1D Thermal cooling of intrusive
@@ -111,7 +111,15 @@ end
 %% - Construct Time Sequence
 Times_all       = sort(([unique(Times); unique(ROCK.Ero_t(ROCK.Ero_t>0))]), 'descend');
 if min(Times_all)~=0
-    Times_all       = [Times_all; 0];
+    if ismember(min(Times_all), SILL.E_time) || ismember(min(Times_all), Times_ero)
+        Times_all       = [Times_all; 0];
+    else
+        Times_all       = [Times_all; min(Times_all)-1e-8; 0];
+    end
+else
+    add_time        = min([min(Times(Times>0))/2 1e-8]);
+    Times_all       = sort([Times_all; add_time], 'descend');
+    Times(1)        = add_time;
 end
 time_all        = 0;
 
@@ -171,14 +179,15 @@ for i = 1:SILL.num
 end
 
 CO2_org         = zeros(nnod,1);
+K_solid         = (K_rock.^(1-Phi_rock)).*(FLUID.k.^(Phi_rock));
 
 %% - Load Carbonate Data
 CO2_release     = zeros(nnod,1);
 Ind_carb        = zeros(nnod,1);
 if max(ROCK.Carb)>0
-    load dat\Marl.mat
-    load dat\Dolostone.mat
-    load dat\DolostoneEvaporite.mat
+    load(fullfile(codeloc, 'dat', 'Marl.mat'))
+    load(fullfile(codeloc, 'dat', 'Dolostone.mat'))
+    load(fullfile(codeloc, 'dat', 'DolostoneEvaporite.mat'))
     
     C1_lith     = find(ROCK.Carb==1);
     for a = 1:length(C1_lith)
@@ -198,7 +207,7 @@ if max(ROCK.Carb)>0
     C3                      = scatteredInterpolant(Dol_ev.T(:), Dol_ev.P(:).*1e5, Dol_ev.CO2(:));
 end
 
-%% - Initialize Temperature 
+%% - Initialize Temperature
 Temp            = WellData.T(1,2)*ones(nnod,1);
 T_check         = NaN*ones(size(Temp));
 T_max           = Temp;
@@ -235,7 +244,6 @@ Active          = false(nel,1);
 %% Time Loop
 textprogressbar(' - Time Loop: ');
 for i = 1:length(Times_all)-1
-
     textprogressbar(i/length(Times_all)*100);
     
     s_emp   = find(unique(SILL.E_time==Times_all(i)));
@@ -292,7 +300,7 @@ for i = 1:length(Times_all)-1
         T_max(Temp>T_max) = Temp(Temp>T_max);
         
         % Solve for Diffusion
-        T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_rock, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
+        T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
             L2G, E2N);
         
         % Reorder Temperature in Global Mesh
@@ -391,7 +399,7 @@ for i = 1:length(Times_all)-1
         
         T_top                   = WellData.T(1,2);
         T_bot                   = (max(Gcoord_n(E2N(:)))).*polya(1)+polya(2);
-                
+
         if i < length(Times_all)
             dt_vr         = (Times_all(i)-Times_all(i+1))*1e6;
         else
@@ -424,6 +432,7 @@ for i = 1:length(Times_all)-1
             
             time        = time + dt/yr;
             time_all    = time_all + dt/yr;
+
             
             %----------------------------------------------------------------------
             % Recompute Densities and heat capacities for coefficient in thermal
@@ -447,7 +456,7 @@ for i = 1:length(Times_all)-1
             Temp_old = Temp;
             
             % -         Solve for Diffusion
-            T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_rock, T_top, T_bot, dt, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
+            T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
                 L2G, E2N);
             
             % Reorder Temperature in Global Mesh
@@ -525,7 +534,7 @@ for i = 1:length(Times_all)-1
             Active(Gcoord_c>top & Gcoord_c<bot) = 0;
         end
         
-        % Set time allowed for VR calculation
+        %         Set time allowed for VR calculation
         if i < length(Times_all)
             dt_vr         = (Times_all(i)-Times_all(i+1))*1e6*yr;
         else
@@ -568,7 +577,7 @@ for i = 1:length(Times_all)-1
         T_max(Temp>T_max) = Temp(Temp>T_max);
         
         % Solve for Diffusion
-        T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_rock, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
+        T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
             L2G, E2N);
         
         % Reorder Temperature in Global Mesh

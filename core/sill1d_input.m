@@ -26,6 +26,7 @@ end
 
 FLUID.rho       = FL_NUM(1,1);
 FLUID.cp        = FL_NUM(1,2);
+FLUID.k         = FL_NUM(1,3);
 
 if ~isempty(ERO_NUM) 
     SORT_NUM        = [LITH_NUM;ERO_NUM(:,1:10)];

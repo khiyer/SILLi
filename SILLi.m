@@ -6,10 +6,13 @@
 %
 %--------------------------------------------------------------------------
 clear all
+codeloc                 = fileparts(mfilename('fullpath')); % Command only works within script
+% codeloc                 = pwd; % Command does not work if script is added
+% to path
 
 %% User Input
 % Input file
-Filename                = fullfile(pwd, 'examples', '1d_sill_input_kl178.xlsx');
+Filename                = fullfile(codeloc, 'examples', '1d_sill_input_dyke.xlsx');
 
 % Resolution - specified through minimum grid spacing and minimum number of
 % points inside sedimentary and sill layers. Whichever measure produces
@@ -22,7 +25,7 @@ resolution.pts_sill     = 50;           % minimum number of points in sills
 %% Initialize (Paths)
 disp('SILLi Model');
 disp(' Initializing');
-run(fullfile(pwd, 'core', 'sill1d_initialize'));
+run(fullfile(codeloc, 'core', 'sill1d_initialize'));
 
 %% Check If Already Run
 % If there exists a mat file with the same filename as the Excel input file
@@ -52,7 +55,7 @@ if strcmp(Choice, 'Run')
     
     %% - Compute
     disp(' Running numerical model');
-    [result, release] = sill1d_compute(rock, sill, fluid, welldata, resolution);
+    [result, release] = sill1d_compute(rock, sill, fluid, welldata, resolution, codeloc);
     
     %% - Save
     disp(' Saving model results');
@@ -67,4 +70,4 @@ end
 
 %% Analyze Results
 disp(' Showing model results');
-sill1d_analyze(rock, sill, welldata, result, release);
+sill1d_analyze(rock, sill, welldata, result, release, codeloc);
