@@ -539,7 +539,7 @@ grid(  h_ax(1), 'on');
                errorbarxy(ax.res(2), welldata.VR(:,2), -welldata.VR(:,1)./1e3, welldata.VR(:,3),0.*welldata.VR(:,3),{'ko', 'b', 'b'});
             end
             hold(ax.res(2), 'off');
-            xlim(ax.res(2), [min(welldata.VR(:,2)) max(welldata.VR(:,2))]);
+            xlim(ax.res(2), [min([welldata.VR(:,2); result.Ro(Active_nodes, tstep)]) max([welldata.VR(:,2); result.Ro(Active_nodes, tstep)])]);
         end
          
         % Plots Sills if present
@@ -580,7 +580,7 @@ grid(  h_ax(1), 'on');
                 h_p = errorbarxy(ax.res(2), welldata.Toc(:,2), -welldata.Toc(:,1)./1e3, welldata.Toc(:,3),0.*welldata.Toc(:,3),{'ko', 'b', 'b'});
             end
             hold(ax.res(3), 'off');
-            xlim(ax.res(3), [min(welldata.Toc(:,2)) max(welldata.Toc(:,2))]);
+            xlim(ax.res(3), [min([welldata.Toc(:,2); plots.Toc(Active_nodes,tstep)]) max([welldata.Toc(:,2); plots.Toc(Active_nodes,tstep)])]);
         end
         
         % Plots Sills if present
