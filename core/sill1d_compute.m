@@ -11,6 +11,10 @@ function [Results, Time] = sill1d_compute(ROCK, SILL, FLUID, WellData, Res, code
 disp(' - Setting up numerical model');
 yr              = 365*24*60*60;
 
+% P and T limit for carbonate interpolation
+maxP            = 1e8;
+maxT            = 1200;
+
 %% - Generate Full Mesh for all Lithologies
 Gcoord          = [];
 
@@ -248,6 +252,7 @@ for i = 1:length(Times_all)-1
     
     s_emp   = find(unique(SILL.E_time==Times_all(i)));
     ero     = find(unique(ROCK.Ero_t(~isnan(ROCK.Ero_t)))==Times_all(i));
+
     
     if isempty(s_emp) && isempty(ero)
         %%- Deposition
@@ -315,18 +320,25 @@ for i = 1:length(Times_all)-1
             C2_ind      = find(Ind_carb(Active_nodes)==2);
             C3_ind      = find(Ind_carb(Active_nodes)==3);
             
+            % Set up T and P for carbonate interpolation using maxP and
+            % maxT
+            T_interp    = Temp;
+            T_interp(T_interp>maxT) = maxT;
+            P_interp    = Pres;
+            P_interp(P_interp>maxP) = maxP;
+            
             if ~isempty(C1_ind)
-                C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(Temp(Active_nodes(C1_ind)), Pres(Active_nodes(C1_ind)))./100);
+                C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(T_interp(Active_nodes(C1_ind)), P_interp(Active_nodes(C1_ind)))./100);
                 C1_do  = find(CO2_release(Active_nodes(C1_ind))<C1_now);
                 CO2_release(Active_nodes(C1_ind(C1_do))) = C1_now(C1_do);
             end
             if ~isempty(C2_ind)
-                C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(Temp(Active_nodes(C2_ind)), Pres(Active_nodes(C2_ind)))./100);
+                C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(T_interp(Active_nodes(C2_ind)), P_interp(Active_nodes(C2_ind)))./100);
                 C2_do  = find(CO2_release(Active_nodes(C2_ind))<C2_now);
                 CO2_release(Active_nodes(C2_ind(C2_do))) = C2_now(C2_do);
             end
             if ~isempty(C3_ind)
-                C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(Temp(Active_nodes(C3_ind)), Pres(Active_nodes(C3_ind)))./100);
+                C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(T_interp(Active_nodes(C3_ind)), P_interp(Active_nodes(C3_ind)))./100);
                 C3_do  = find(CO2_release(Active_nodes(C3_ind))<C3_now);
                 CO2_release(Active_nodes(C3_ind(C3_do))) = C3_now(C3_do);
             end
@@ -418,6 +430,9 @@ for i = 1:length(Times_all)-1
         dt_vr_count     = 0;
 
         while time<dt_vr % Time loop for heat conduction after sill emplacement
+            if c1 == 599
+                eas= 1;
+            end
             if time_end_s-time>1e-6
                 t_sill_count    = t_sill_count + 1;
                 dt              = dt_sill(t_sill_count)*yr;            
@@ -471,18 +486,25 @@ for i = 1:length(Times_all)-1
                 C2_ind      = find(Ind_carb(Active_nodes)==2);
                 C3_ind      = find(Ind_carb(Active_nodes)==3);
                 
+                % Set up T and P for carbonate interpolation using maxP and
+                % maxT
+                T_interp    = Temp;
+                T_interp(T_interp>maxT) = maxT;
+                P_interp    = Pres;
+                P_interp(P_interp>maxP) = maxP;
+                
                 if ~isempty(C1_ind)
-                    C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(Temp(Active_nodes(C1_ind)), Pres(Active_nodes(C1_ind)))./100);
+                    C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(T_interp(Active_nodes(C1_ind)), P_interp(Active_nodes(C1_ind)))./100);
                     C1_do  = find(CO2_release(Active_nodes(C1_ind))<C1_now);
                     CO2_release(Active_nodes(C1_ind(C1_do))) = C1_now(C1_do);
                 end
                 if ~isempty(C2_ind)
-                    C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(Temp(Active_nodes(C2_ind)), Pres(Active_nodes(C2_ind)))./100);
+                    C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(T_interp(Active_nodes(C2_ind)), P_interp(Active_nodes(C2_ind)))./100);
                     C2_do  = find(CO2_release(Active_nodes(C2_ind))<C2_now);
                     CO2_release(Active_nodes(C2_ind(C2_do))) = C2_now(C2_do);
                 end
                 if ~isempty(C3_ind)
-                    C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(Temp(Active_nodes(C3_ind)), Pres(Active_nodes(C3_ind)))./100);
+                    C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(T_interp(Active_nodes(C3_ind)), P_interp(Active_nodes(C3_ind)))./100);
                     C3_do  = find(CO2_release(Active_nodes(C3_ind))<C3_now);
                     CO2_release(Active_nodes(C3_ind(C3_do))) = C3_now(C3_do);
                 end
@@ -592,18 +614,25 @@ for i = 1:length(Times_all)-1
             C2_ind      = find(Ind_carb(Active_nodes)==2);
             C3_ind      = find(Ind_carb(Active_nodes)==3);
             
+            % Set up T and P for carbonate interpolation using maxP and
+            % maxT
+            T_interp    = Temp;
+            T_interp(T_interp>maxT) = maxT;
+            P_interp    = Pres;
+            P_interp(P_interp>maxP) = maxP;
+            
             if ~isempty(C1_ind)
-                C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(Temp(Active_nodes(C1_ind)), Pres(Active_nodes(C1_ind)))./100);
+                C1_now  = (1-Phi_rock(Active_nodes(C1_ind))).*Rho_rock(Active_nodes(C1_ind)).*(C1(T_interp(Active_nodes(C1_ind)), P_interp(Active_nodes(C1_ind)))./100);
                 C1_do  = find(CO2_release(Active_nodes(C1_ind))<C1_now);
                 CO2_release(Active_nodes(C1_ind(C1_do))) = C1_now(C1_do);
             end
             if ~isempty(C2_ind)
-                C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(Temp(Active_nodes(C2_ind)), Pres(Active_nodes(C2_ind)))./100);
+                C2_now = (1-Phi_rock(Active_nodes(C2_ind))).*Rho_rock(Active_nodes(C2_ind)).*(C2(T_interp(Active_nodes(C2_ind)), P_interp(Active_nodes(C2_ind)))./100);
                 C2_do  = find(CO2_release(Active_nodes(C2_ind))<C2_now);
                 CO2_release(Active_nodes(C2_ind(C2_do))) = C2_now(C2_do);
             end
             if ~isempty(C3_ind)
-                C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(Temp(Active_nodes(C3_ind)), Pres(Active_nodes(C3_ind)))./100);
+                C3_now = (1-Phi_rock(Active_nodes(C3_ind))).*Rho_rock(Active_nodes(C3_ind)).*(C3(T_interp(Active_nodes(C3_ind)), P_interp(Active_nodes(C3_ind)))./100);
                 C3_do  = find(CO2_release(Active_nodes(C3_ind))<C3_now);
                 CO2_release(Active_nodes(C3_ind(C3_do))) = C3_now(C3_do);
             end
