@@ -16,10 +16,10 @@ The governing equation is the 1D heat diffusion equation:
 Where <I>c<sub>peff</sub></I> is the effective rock heat capacity that includes the latent heat of crystallization for the sill and <I>H</I> accounts for the latent heat of dehydration in the surrounding sedimentary rock.
 
 ### Examples
-- sills in the Karoo basin (v1.0) [Karoo Basin](/tutorials/karoo.md)
-- sills in the Vøring basin (v1.0) [Vøring Basin](/tutorials/utgard.md)
-- igneous pluton without basin evoultion (v1.0) [igneous intrusion into a pluton](/tutorials/pluton.md) 
-- sills in a coal bed methane play in Botswana (v1.1) (Bulguroglu and Milkov, 2020)
+- sills in the Karoo basin [Karoo Basin](/tutorials/karoo.md)
+- sills in the Vøring basin [Vøring Basin](/tutorials/utgard.md)
+- igneous pluton without basin evoultion [igneous intrusion into a pluton](/tutorials/pluton.md) 
+- sills in a coal bed methane play in Botswana (Bulguroglu and Milkov, 2020)
 
 ### Further Reading
 A full description of the model with examples can be found [here](https://www.geosci-model-dev.net/11/43/2018/).
