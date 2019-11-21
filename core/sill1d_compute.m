@@ -1,4 +1,4 @@
-function [Results, Time] = sill1d_compute(ROCK, SILL, FLUID, WellData, Res, codeloc)
+function [Results, Time] = sill1d_compute(ROCK, SILL, FLUID, WellData, Res, codeloc, model)
 % sill1d_comput
 %
 % 1D Thermal cooling of intrusive
@@ -22,7 +22,7 @@ Gcoord          = [];
 basement        = max([ROCK.Tops+10; SILL.Tops+SILL.Thick+(SILL.Thick.*5)]);
 All_tops        = unique([ROCK.Tops; basement; SILL.Tops; SILL.Tops+SILL.Thick]);
 for i = 1:length(All_tops)-1
-    if any(All_tops(i)==SILL.Tops);
+    if any(All_tops(i)==SILL.Tops)
         d_z         = min([Res.dz_sill (All_tops(i+1)-All_tops(i))/Res.pts_sill]);
         Gcoord      = unique([Gcoord All_tops(i):d_z:All_tops(i+1) All_tops(i+1)]);
     else
@@ -41,7 +41,7 @@ Ind_nel         = NaN*ones(nel,1);
 Gcoord_c        = (Gcoord(1:end-1)+Gcoord(2:end))./2;
 for i=1:length(ROCK.Tops)
     Ind(Gcoord>=ROCK.Tops(i)) = i;
-    Ind_nel(Gcoord_c>=ROCK.Tops(i)) = i;
+    Ind_nel(Gcoord_c>ROCK.Tops(i)) = i;
 end
 
 % Generate Indices for sills
@@ -50,8 +50,8 @@ Events_sill     = sort(unique([SILL.E_time]), 'descend');
 for i=1:length(Events_sill)
     x           = find(SILL.E_time==Events_sill(i));
     for j = 1:length(x)
-        Ind(Gcoord>=SILL.Tops(x(j)) & Gcoord<(SILL.Tops(x(j))+SILL.Thick(x(j)))) = -sill_ind;
-        Ind_nel(Gcoord_c>=SILL.Tops(x(j)) & Gcoord_c<(SILL.Tops(x(j))+SILL.Thick(x(j)))) = -sill_ind;
+        Ind(Gcoord>=SILL.Tops(x(j)) & Gcoord<=(SILL.Tops(x(j))+SILL.Thick(x(j)))) = -sill_ind;
+        Ind_nel(Gcoord_c>SILL.Tops(x(j)) & Gcoord_c<(SILL.Tops(x(j))+SILL.Thick(x(j)))) = -sill_ind;
         sill_ind = sill_ind+1;
     end
 end
@@ -179,11 +179,19 @@ for i = 1:SILL.num
     Liq_rock(Ind==-i)    = SILL.Liq(i);
     Latent_dehyd(Ind==-i)= 0;
     Latent_om(Ind==-i)   = 0;
-    W(Ind==-i,:)         = 0;
+    W(Ind==-i,:)         = 1;
 end
 
 CO2_org         = zeros(nnod,1);
 K_solid         = (K_rock.^(1-Phi_rock)).*(FLUID.k.^(Phi_rock));
+
+% Compute Average Conductivity (Weighted Harmonic Mean)
+prod = 0;
+for i = 1:length(K_solid)-1
+    wt      = Gcoord(i+1)-Gcoord(i);
+    prod    = prod + wt/mean([K_solid(i) K_solid(i+1)]);
+end
+k_avg       = max(Gcoord)/prod;
 
 %% - Load Carbonate Data
 CO2_release     = zeros(nnod,1);
@@ -219,6 +227,8 @@ T_max           = Temp;
 x               = WellData.T(:,1)';
 y               = WellData.T(:,2)';
 polya           = polyfit(x,y,1);
+
+model.t_bc.t_grad     =  (WellData.T(2,2)-WellData.T(1,2))/(WellData.T(2,1)-WellData.T(1,1)); % Compute thermal gradient from data
 
 %% - Initialize Pressure
 Pres            = zeros(nnod,1);
@@ -306,7 +316,7 @@ for i = 1:length(Times_all)-1
         
         % Solve for Diffusion
         T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
-            L2G, E2N);
+            L2G, E2N, model.t_bc, k_avg);
         
         % Reorder Temperature in Global Mesh
         T_check(E2N(:)) = T(L2G(:));
@@ -350,10 +360,7 @@ for i = 1:length(Times_all)-1
             Toc_rock_o(Active_nodes), Phi_rock(Active_nodes), W(Active_nodes,:), Ld_rock(Active_nodes));
         
         CO2_org(Active_nodes)     = (Toc_rock(Active_nodes)- Toc_rock_o(Active_nodes)).*(1-Phi_rock(Active_nodes)).*Rho_rock(Active_nodes).*3.66;
-        
-        Ro_plot = Ro;
-        Ro_plot(Ind<0) = NaN;
-        
+               
         A_store                   = zeros(nnod,1);
         A_store(Active_nodes)     = 1;
         
@@ -361,7 +368,7 @@ for i = 1:length(Times_all)-1
         Results.Temp(:,c1)            = Temp;                % Temperature
         Results.Pres(:,c1)            = Pres;                % Pressure
         Results.Toc(:,c1)             = Toc_rock_o.*1e2;     % TOC contents
-        Results.Ro(:,c1)              = Ro_plot;             % Maturity
+        Results.Ro(:,c1)              = Ro;                  % Maturity
         Results.Tmax(:,c1)            = T_max;               % Maximum Temperature
         Results.Active(:,c1)          = A_store;             % Active nodes for time step
         Results.Gcoord(:,c1)          = Gcoord_n;            % Z-values for lithologies
@@ -472,7 +479,7 @@ for i = 1:length(Times_all)-1
             
             % -         Solve for Diffusion
             T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
-                L2G, E2N);
+                L2G, E2N, model.t_bc, k_avg);
             
             % Reorder Temperature in Global Mesh
             T_check(E2N(:)) = T(L2G(:));
@@ -517,9 +524,6 @@ for i = 1:length(Times_all)-1
             
             CO2_org(Active_nodes)     = (Toc_rock(Active_nodes)- Toc_rock_o(Active_nodes)).*(1-Phi_rock(Active_nodes)).*Rho_rock(Active_nodes).*3.66;
             
-            Ro_plot = Ro;
-            Ro_plot(Ind<0) = NaN;
-            
             A_store                 = zeros(nnod,1);
             A_store(Active_nodes)   = 1;
             
@@ -527,7 +531,7 @@ for i = 1:length(Times_all)-1
             Results.Temp(:,c1)            = Temp;                % Temperature
             Results.Pres(:,c1)            = Pres;                % Pressure
             Results.Toc(:,c1)             = Toc_rock_o.*1e2;     % TOC contents
-            Results.Ro(:,c1)              = Ro_plot;             % Maturity
+            Results.Ro(:,c1)              = Ro;                  % Maturity
             Results.Tmax(:,c1)            = T_max;               % Maximum Temperature
             Results.Active(:,c1)          = A_store;             % Active nodes for time step
             Results.Gcoord(:,c1)          = Gcoord_n;            % Z-values for lithologies
@@ -600,7 +604,7 @@ for i = 1:length(Times_all)-1
         
         % Solve for Diffusion
         T = thermal1d_fem(Temp, Gcoord_n, Coeff_temp, K_solid, T_top, T_bot, dt_vr, n_nel, n_nel+1, Latent_dehyd, Latent_om,...
-            L2G, E2N);
+            L2G, E2N, model.t_bc, k_avg);
         
         % Reorder Temperature in Global Mesh
         T_check(E2N(:)) = T(L2G(:));
@@ -644,10 +648,7 @@ for i = 1:length(Times_all)-1
             Toc_rock_o(Active_nodes), Phi_rock(Active_nodes), W(Active_nodes,:), Ld_rock(Active_nodes));
         
         CO2_org(Active_nodes)     = (Toc_rock(Active_nodes)- Toc_rock_o(Active_nodes)).*(1-Phi_rock(Active_nodes)).*Rho_rock(Active_nodes).*3.66;
-        
-        Ro_plot = Ro;
-        Ro_plot(Ind<0) = NaN;
-        
+
         A_store                 = zeros(nnod,1);
         A_store(Active_nodes)   = 1;
         
@@ -655,7 +656,7 @@ for i = 1:length(Times_all)-1
         Results.Temp(:,c1)            = Temp;                % Temperature
         Results.Pres(:,c1)            = Pres;                % Pressure
         Results.Toc(:,c1)             = Toc_rock_o.*1e2;     % TOC contents
-        Results.Ro(:,c1)              = Ro_plot;             % Maturity
+        Results.Ro(:,c1)              = Ro;                  % Maturity
         Results.Tmax(:,c1)            = T_max;               % Maximum Temperature
         Results.Active(:,c1)          = A_store;             % Active nodes for time step
         Results.Gcoord(:,c1)          = Gcoord_n;            % Z-values for lithologies

@@ -12,15 +12,19 @@ codeloc                 = fileparts(mfilename('fullpath')); % Command only works
 
 %% User Input
 % Input file
-Filename                = fullfile(codeloc, 'examples', '1d_sill_input_dyke.xlsx');
+Filename                = fullfile(codeloc, 'examples', '1d_sill_input_corehole_135c5.xlsx');
 
 % Resolution - specified through minimum grid spacing and minimum number of
 % points inside sedimentary and sill layers. Whichever measure produces
 % higher resolution is taken.
-resolution.dz_sed       = 5;            % minimum spacing in sediments (m)
-resolution.dz_sill      = 1;            % minimum spacing in sills (m)
-resolution.pts_sed      = 20;           % minimum number of points in sediments
-resolution.pts_sill     = 50;           % minimum number of points in sills
+resolution.dz_sed       = 10;           % minimum spacing in sediments (m)
+resolution.dz_sill      = 2;            % minimum spacing in sills (m)
+resolution.pts_sed      = 50;           % minimum number of points in sediments
+resolution.pts_sill     = 20;           % minimum number of points in sills
+
+% Model Boundary Conditions
+model.t_bc.choice       = 2; % 1= Fixed Temperature or 2 = Heat Flux Bottom Boundary Condition
+model.t_bc.factor       = 1; % HF is implemented using the avg. conductivity and the temperature data. This may not exactly correspond to the desired thermal gradient and can be tweaked using the factor.
 
 %% Initialize (Paths)
 disp('SILLi Model');
@@ -55,7 +59,7 @@ if strcmp(Choice, 'Run')
     
     %% - Compute
     disp(' Running numerical model');
-    [result, release] = sill1d_compute(rock, sill, fluid, welldata, resolution, codeloc);
+    [result, release] = sill1d_compute(rock, sill, fluid, welldata, resolution, codeloc, model);
     
     %% - Save
     disp(' Saving model results');

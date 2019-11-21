@@ -32,7 +32,6 @@ for r=1:no_react
     % Update Reaction Progress Recorder
     F1   = F1 + f_i(r).*(1-W(:,r));
 end
-F1(ind<0) = 0;
 
 % Evaluate synthetic vitrinite
 Ro = exp(-1.6 + 3.7*F1);

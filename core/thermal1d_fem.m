@@ -1,5 +1,5 @@
-function [Temp] = thermal1d_fem(Temp, Gcoord, coeff_temp, K_r, T_left, T_right, dt, nel, nnod, Latent_dehyd,...
-    Latent_om, L2G, NODES)
+function [Temp] = thermal1d_fem(Temp, Gcoord, coeff_temp, K_r, T_top, T_bot, dt, nel, nnod, Latent_dehyd,...
+    Latent_om, L2G, NODES, t_bc, k_avg)
 %  thermal1d_fem
 %  
 %  1D FEM code for thermal diffusion
@@ -60,18 +60,27 @@ end
 
 A_dif = sparse(KKi(:),KKj(:),KK_dif(:));
 
-
-%Apply bc
-
-Bc_it = [1, nnod];
-Bc_vt = [T_left, T_right];
-
-for i=1:size(Bc_it,2)
-    A_dif(Bc_it(i),:)        = 0;
-    A_dif(Bc_it(i),Bc_it(i)) = 1;
-    F_dif(Bc_it(i))          = Bc_vt(i);
-
-
+if t_bc.choice == 1
+    % Apply bc (Constant T)
+    Bc_it = [1, nnod];
+    Bc_vt = [T_top, T_bot];
+    
+    for i=1:size(Bc_it,2)
+        A_dif(Bc_it(i),:)        = 0;
+        A_dif(Bc_it(i),Bc_it(i)) = 1;
+        F_dif(Bc_it(i))          = Bc_vt(i);
+    end
+elseif t_bc.choice == 2
+    % Apply bc (HF)
+    Bc_it = 1;
+    Bc_vt = T_top;
+    
+    for i=1:size(Bc_it,2)
+        A_dif(Bc_it(i),:)        = 0;
+        A_dif(Bc_it(i),Bc_it(i)) = 1;
+        F_dif(Bc_it(i))          = Bc_vt(i);
+    end
+    F_dif(nnod)                  = F_dif(nnod) + t_bc.factor*k_avg*t_bc.t_grad*dt;
 end
 
 %Solution

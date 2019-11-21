@@ -596,7 +596,6 @@ grid(  h_ax(1), 'on');
         %% T-Max
         p_p4    = getappdata(sill1d_gui_handle, 'p_p4');
         T_max               = result.Tmax(:,tstep);
-        T_max(result.Ind<0) = NaN;
         if isempty(p_p4) || ~ishandle(p_p4)
             p_p4 = plot(T_max(Active_nodes), -result.Gcoord(Active_nodes, tstep)./1e3, '.-', 'Color', [255/255 128/255 0], 'MarkerFaceColor', 'k', 'Parent', ax.res(4)); % Orange
             add_menu(p_p4);
