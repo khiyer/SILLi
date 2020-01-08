@@ -118,10 +118,10 @@ if min(Times_all)~=0
     if ismember(min(Times_all), SILL.E_time) || ismember(min(Times_all), Times_ero)
         Times_all       = [Times_all; 0];
     else
-        Times_all       = [Times_all; min(Times_all)-1e-8; 0];
+        Times_all       = [Times_all; min(Times_all)-1e-6; 0];
     end
 else
-    add_time        = min([min(Times(Times>0))/2 1e-8]);
+    add_time        = min([min(Times(Times>0))/2 1e-6]);
     Times_all       = sort([Times_all; add_time], 'descend');
     Times(1)        = add_time;
 end
