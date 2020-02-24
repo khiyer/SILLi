@@ -114,10 +114,10 @@ Fm_input    = input_array(rock.Tops, rock.Rho);
 Sill_input  = input_array(sill.Tops, sill.Rhos, sill.Thick);
 
 hold(ax1_2, 'on');
-h_p(1)  = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [0 102/255 204/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [0 102/255 204/255], 'Parent', ax1_2); % Blue
+h_p(1)  = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, '.-', 'Color', [0 102/255 204/255], 'MarkerEdgeColor', [0 102/255 204/255], 'Parent', ax1_2); % Blue
 setappdata(h_p(1), 'inputdata', Fm_input(1:3:end,:));
 add_menu2(h_p(1));
-h_p(2)  = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'sq-', 'Color', 'k', 'MarkerEdgeColor', 'none', 'MarkerFaceColor', 'k', 'Parent', ax1_2); 
+h_p(2)  = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'x-', 'Color', 'k', 'MarkerEdgeColor', 'k', 'Parent', ax1_2); 
 setappdata(h_p(2), 'inputdata', Sill_input(1:3:end,:));
 add_menu2(h_p(2));
 hold(ax1_2, 'off');
@@ -131,11 +131,11 @@ ylim(  ax1_2, [floor(max_ax) ceil(min_ax)]);
 %% - Porosity
 Fm_input    = input_array(rock.Tops, rock.Phi);
 hold(ax1_3, 'on');
-h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [255/255 128/255 0], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [255/255 128/255 0], 'Parent', ax1_3); % Orange
+h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, '.-', 'Color', [255/255 128/255 0], 'MarkerEdgeColor', [255/255 128/255 0], 'Parent', ax1_3); % Orange
 setappdata(h_p, 'inputdata', Fm_input(1:3:end,:));
 add_menu2(h_p);
 box(ax1_3, 'on');
-hold(ax1_3, 'on');
+hold(ax1_3, 'off');
 ylabel(ax1_3, 'TVDSS [km]')
 title( ax1_3, 'Porosity [fraction]')
 set(   ax1_3, 'xaxisLocation', 'top')
@@ -145,7 +145,7 @@ ylim(  ax1_3, [floor(max_ax) ceil(min_ax)]);
 %% - TOC
 Fm_input    = input_array(rock.Tops, rock.Toc);
 hold(ax1_4, 'on');
-h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [0 204/255 102/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [0 204/255 102/255], 'Parent', ax1_4); % Green
+h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, '.-', 'Color', [0 204/255 102/255], 'MarkerEdgeColor', [0 204/255 102/255], 'Parent', ax1_4); % Green
 setappdata(h_p, 'inputdata', Fm_input(1:3:end,:));
 add_menu2(h_p);
 box(ax1_4, 'on');
@@ -161,14 +161,14 @@ Fm_input    = input_array(rock.Tops, rock.K);
 Sill_input  = input_array(sill.Tops, sill.K, sill.Thick);
 
 hold(ax1_5, 'on');
-h_p(1) = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [255/255 51/255 51/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [255/255 51/255 51/255], 'Parent', ax1_5); % Red
+h_p(1) = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, '.-', 'Color', [255/255 51/255 51/255], 'MarkerEdgeColor', [255/255 51/255 51/255], 'Parent', ax1_5); % Red
 setappdata(h_p(1), 'inputdata', Fm_input(1:3:end,:));
 add_menu2(h_p(1));
-h_p(2) = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'sq-', 'Color', 'k', 'MarkerEdgeColor', 'none', 'MarkerFaceColor', 'k', 'Parent', ax1_5);
+h_p(2) = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'x-', 'Color', 'k', 'MarkerEdgeColor', 'k', 'Parent', ax1_5);
 setappdata(h_p(2), 'inputdata', Sill_input(1:3:end,:));
 add_menu2(h_p(2));
 box(ax1_5, 'on');
-hold(ax1_5, 'on');
+hold(ax1_5, 'off');
 ylabel(ax1_5, 'TVDSS [km]')
 title( ax1_5, 'Conductivity [W m^-^1 K^-^1]')
 set(   ax1_5, 'xaxisLocation', 'top')
