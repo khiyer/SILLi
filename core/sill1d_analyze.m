@@ -104,13 +104,24 @@ for i = 1:length(sill.Tops)
 end
 
 % Ornaments
+box(ax1_1, 'on');
 set(ax1_1, 'XTick', [], 'XTickLabel', [], 'Box', 'on');
 ylabel(ax1_1, 'TVDSS [km]');
 title(ax1_1, 'Lithological Column');
 
 %% - Density
-h_p = plot(rock.Rho, -rock.Tops./1e3, 'o-', 'Color', [0 102/255 204/255], 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'Parent', ax1_2); % Blue
-add_menu(h_p);
+Fm_input    = input_array(rock.Tops, rock.Rho);
+Sill_input  = input_array(sill.Tops, sill.Rhos, sill.Thick);
+
+hold(ax1_2, 'on');
+h_p(1)  = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [0 102/255 204/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [0 102/255 204/255], 'Parent', ax1_2); % Blue
+setappdata(h_p(1), 'inputdata', Fm_input(1:3:end,:));
+add_menu2(h_p(1));
+h_p(2)  = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'sq-', 'Color', 'k', 'MarkerEdgeColor', 'none', 'MarkerFaceColor', 'k', 'Parent', ax1_2); 
+setappdata(h_p(2), 'inputdata', Sill_input(1:3:end,:));
+add_menu2(h_p(2));
+hold(ax1_2, 'off');
+box(ax1_2, 'on');
 ylabel(ax1_2, 'TVDSS [km]')
 title( ax1_2, 'Density [kg/m^3]')
 set(   ax1_2, 'xaxisLocation', 'top')
@@ -118,8 +129,13 @@ grid(  ax1_2, 'on')
 ylim(  ax1_2, [floor(max_ax) ceil(min_ax)]);
 
 %% - Porosity
-h_p = plot(rock.Phi, -rock.Tops./1e3, 'o-', 'Color', [255/255 128/255 0], 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'Parent',ax1_3); % Orange
-add_menu(h_p);
+Fm_input    = input_array(rock.Tops, rock.Phi);
+hold(ax1_3, 'on');
+h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [255/255 128/255 0], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [255/255 128/255 0], 'Parent', ax1_3); % Orange
+setappdata(h_p, 'inputdata', Fm_input(1:3:end,:));
+add_menu2(h_p);
+box(ax1_3, 'on');
+hold(ax1_3, 'on');
 ylabel(ax1_3, 'TVDSS [km]')
 title( ax1_3, 'Porosity [fraction]')
 set(   ax1_3, 'xaxisLocation', 'top')
@@ -127,8 +143,13 @@ grid(  ax1_3, 'on')
 ylim(  ax1_3, [floor(max_ax) ceil(min_ax)]);
 
 %% - TOC
-h_p = plot(rock.Toc.*100, -rock.Tops./1e3, 'o-', 'Color', [0 204/255 102/255], 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'Parent',ax1_4); % Green
-add_menu(h_p);
+Fm_input    = input_array(rock.Tops, rock.Toc);
+hold(ax1_4, 'on');
+h_p = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [0 204/255 102/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [0 204/255 102/255], 'Parent', ax1_4); % Green
+setappdata(h_p, 'inputdata', Fm_input(1:3:end,:));
+add_menu2(h_p);
+box(ax1_4, 'on');
+hold(ax1_4, 'off');
 ylabel(ax1_4, 'TVDSS [km]')
 title( ax1_4, 'TOC Content [wt%]')
 set(   ax1_4, 'xaxisLocation', 'top')
@@ -136,8 +157,18 @@ grid(  ax1_4, 'on')
 ylim(  ax1_4, [floor(max_ax) ceil(min_ax)]);
 
 %% - Conductivity
-h_p = plot(rock.K, -rock.Tops./1e3, 'o-', 'Color', [255/255 51/255 51/255], 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'Parent',ax1_5); % Red
-add_menu(h_p);
+Fm_input    = input_array(rock.Tops, rock.K);
+Sill_input  = input_array(sill.Tops, sill.K, sill.Thick);
+
+hold(ax1_5, 'on');
+h_p(1) = plot(Fm_input(:,1), -Fm_input(:,2)./1e3, 'o-', 'Color', [255/255 51/255 51/255], 'MarkerEdgeColor', 'none', 'MarkerFaceColor', [255/255 51/255 51/255], 'Parent', ax1_5); % Red
+setappdata(h_p(1), 'inputdata', Fm_input(1:3:end,:));
+add_menu2(h_p(1));
+h_p(2) = plot(Sill_input(:,1), -Sill_input(:,2)./1e3, 'sq-', 'Color', 'k', 'MarkerEdgeColor', 'none', 'MarkerFaceColor', 'k', 'Parent', ax1_5);
+setappdata(h_p(2), 'inputdata', Sill_input(1:3:end,:));
+add_menu2(h_p(2));
+box(ax1_5, 'on');
+hold(ax1_5, 'on');
 ylabel(ax1_5, 'TVDSS [km]')
 title( ax1_5, 'Conductivity [W m^-^1 K^-^1]')
 set(   ax1_5, 'xaxisLocation', 'top')
@@ -776,4 +807,33 @@ function add_menu(object_handle)
 uicm    = uicontextmenu;
 uimenu(uicm, 'Label', 'Copy data to clipboard', 'Callback', {@data2clipboard, object_handle});
 object_handle.UIContextMenu = uicm;
+end
+
+%% fun input_array
+% Generates array for plotting input properties
+function arr = input_array(Tops, Prop, Thick)
+if nargin==2 % Fm tops are passed, uses lower Fm top as bottom for line segment
+    arr     = NaN*ones((length(Tops)-1)*2 + length(Tops)-1, 2);
+    for i   = 1:length(Tops)-1
+        arr(3*(i-1)+1:i*3, :) = [Prop(i) Prop(i) NaN; Tops(i) Tops(i+1) NaN]';
+    end
+else % Sill tops are passed with thickness which is bottom for line segment
+    arr     = NaN*ones(length(Tops)*2 + length(Tops), 2);
+    for i   = 1:length(Tops)
+        arr(3*(i-1)+1:i*3, :) = [Prop(i) Prop(i) NaN; Tops(i) Tops(i)+Thick(i) NaN]';
+    end
+end
+end
+
+%% fun add_menu2
+function add_menu2(object_handle)
+uicm    = uicontextmenu;
+uimenu(uicm, 'Label', 'Copy data to clipboard', 'Callback', {@input2clipboard, object_handle});
+object_handle.UIContextMenu = uicm;
+end
+
+%% fun input2clipboard
+function input2clipboard(~, ~, obj)
+DATA       = getappdata(obj, 'inputdata');
+num2clip(DATA);
 end

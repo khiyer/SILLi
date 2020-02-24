@@ -12,7 +12,7 @@ codeloc                 = fileparts(mfilename('fullpath')); % Command only works
 
 %% User Input
 % Input file
-Filename                = fullfile(codeloc, 'examples', '1d_sill_input_corehole_135c5.xlsx');
+Filename                = fullfile(codeloc, 'examples', '1d_sill_input_utgard.xlsx');
 
 % Resolution - specified through minimum grid spacing and minimum number of
 % points inside sedimentary and sill layers. Whichever measure produces
